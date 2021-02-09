@@ -44,6 +44,7 @@ class Bot(BotBase):
 
         channel = self.get_channel(808620454122225674)
         await channel.send("An error occured.")   
+        
         raise # type: ignore 
 
     async def on_command_error(self, ctx, exc):
