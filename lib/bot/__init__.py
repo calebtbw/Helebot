@@ -3,8 +3,11 @@ from datetime import datetime
 from discord import Intents
 from discord import Embed, File
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
 from discord.ext.commands import Bot as BotBase
 from discord.ext.commands import CommandNotFound
+
+from lib.db import db 
 
 PREFIX = "+"
 OWNER_IDS = [757239097583730709]
@@ -17,6 +20,7 @@ class Bot(BotBase):
         self.guild = None
         self.scheduler = AsyncIOScheduler()
 
+        db.autosave(self.scheduler)
         super().__init__(
             command_prefix=PREFIX, 
             owner_ids=OWNER_IDS,
@@ -31,6 +35,10 @@ class Bot(BotBase):
 
         print("Running Bot...")
         super().run(self.TOKEN, reconnect=True)
+
+    async def rules_reminder(self):
+        channel = self.get_channel(808620454122225674)
+        await channel.send("Do not Tag, DM, or add Staff as friends, because we are not your friends.")
 
     async def on_connect(self):
         print("Bot Connected!")
@@ -61,7 +69,8 @@ class Bot(BotBase):
         if not self.ready:
             self.ready = True
             self.guild = self.get_guild(808533625016156220)
-            print("Bot Ready!")
+            self.scheduler.add_job(self.rules_reminder, CronTrigger(day_of_week=0, hour=12, minute=0, second=0))
+            self.scheduler.start()
 
             channel = self.get_channel(808620454122225674)
             await channel.send("Now Online!")
@@ -80,6 +89,8 @@ class Bot(BotBase):
             await channel.send(embed=embed)
 
             await channel.send(file=File("./data/images/logo.png"))
+
+            print("Bot Ready!")
 
         else:
             print("Bot Reconnected!")
