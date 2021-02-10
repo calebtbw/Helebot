@@ -118,7 +118,7 @@ class Bot(BotBase):
 
             #embed = Embed(title="Now Online!", description="CT Bot is running like a God.", 
             #              colour=0xFF0000, timestamp=datetime.utcnow())
-            #fields = [("CT BOT", "0.0.6", True),
+            #fields = [("CT BOT", "1.0.0", True),
             #          ("Made by:", "The unthinkable knowledge of a God.", True),
             #          ("For:", "Me to realise I am actually a God.", False)]
             #for name, value, inline in fields:
