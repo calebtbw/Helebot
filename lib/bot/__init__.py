@@ -6,8 +6,10 @@ from discord import Intents
 from discord import Embed, File
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
+from discord.errors import HTTPException, Forbidden
 from discord.ext.commands import Bot as BotBase
-from discord.ext.commands import CommandNotFound
+from discord.ext.commands import Context
+from discord.ext.commands import (CommandNotFound, BadArgument, MissingRequiredArgument)
 
 from lib.db import db 
 
@@ -15,6 +17,7 @@ from lib.db import db
 PREFIX = "+"
 OWNER_IDS = [757239097583730709]
 COGS = [path.split("\\")[-1][:-3] for path in glob("./lib/cogs/*.py")]
+IGNORE_EXCEPTIONS = (CommandNotFound, BadArgument)
 
 class Ready(object):
     def __init__(self):
@@ -62,6 +65,16 @@ class Bot(BotBase):
         print("Running Bot...")
         super().run(self.TOKEN, reconnect=True)
 
+    async def process_commands(self, message):
+        ctx = await self.get_context(message, cls=Context)
+
+        if ctx.command is not None and ctx.guild is not None:
+            if self.ready:
+                await self.invoke(ctx)
+
+            else:
+                await ctx.send("Not ready for commands. Moment please.")
+
     async def rules_reminder(self):
         await self.stdout.send("Do not Tag, DM, or add Staff as friends, because we are not your friends.")
 
@@ -80,14 +93,20 @@ class Bot(BotBase):
         raise # type: ignore 
 
     async def on_command_error(self, ctx, exc):
-        if isinstance(exc, CommandNotFound):
+        if any([isinstance(exc, error) for error in IGNORE_EXCEPTIONS]):
             pass
 
-        elif hasattr(exc, "original"):
-            raise exc.original
+        elif isinstance(exc, MissingRequiredArgument):
+            await ctx.send("One of more required arguments are missing!")
+
+        elif isinstance(exc.original, HTTPException):
+            await ctx.send("Unable to send message.")
+
+        elif isinstance(exc.original, Forbidden):
+            await ctx.send("No permission to do that.")
 
         else:
-            raise exc
+            raise exc.original
 
     async def on_ready(self):
         if not self.ready:
@@ -99,7 +118,7 @@ class Bot(BotBase):
 
             #embed = Embed(title="Now Online!", description="CT Bot is running like a God.", 
             #              colour=0xFF0000, timestamp=datetime.utcnow())
-            #fields = [("CT BOT", "0.0.4", True),
+            #fields = [("CT BOT", "0.0.6", True),
             #          ("Made by:", "The unthinkable knowledge of a God.", True),
             #          ("For:", "Me to realise I am actually a God.", False)]
             #for name, value, inline in fields:
@@ -124,8 +143,9 @@ class Bot(BotBase):
             print("Bot Reconnected!")
             
 
-    async def on_message(self, message):
-        pass
+    async def on_message(self, message):       
+        if not message.author.bot:
+            await self.process_commands(message)
 
 
 bot = Bot()
