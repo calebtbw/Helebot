@@ -9,6 +9,7 @@ from discord.ext.commands import CommandNotFound
 
 from lib.db import db 
 
+
 PREFIX = "+"
 OWNER_IDS = [757239097583730709]
 
