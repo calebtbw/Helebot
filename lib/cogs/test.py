@@ -43,6 +43,14 @@ class Test(Cog):
         if isinstance(exc, BadArgument):
             await ctx.send("Unable to locate victim.")
 
+    @command(name="ghub")
+    async def say_ghub(self, ctx):
+        await ctx.send(f"| Github: https://github.com/calebtbw | Mostly Java Projects")
+
+    @command(name="glab")
+    async def say_glab(self, ctx):
+        await ctx.send(f"| Gitlab: https://gitlab.com/calebtaybw | Where Python Begins")
+
     @Cog.listener()
     async def on_ready(self):
         if not self.bot.ready:
