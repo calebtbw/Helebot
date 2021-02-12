@@ -3,7 +3,7 @@ from datetime import datetime
 from glob import glob
 
 from discord import Intents
-from discord import Embed, File
+from discord import Embed, File, DMChannel
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from discord.errors import HTTPException, Forbidden
@@ -118,7 +118,7 @@ class Bot(BotBase):
 
             #embed = Embed(title="Now Online!", description="CT Bot is running like a God.", 
             #              colour=0xFF0000, timestamp=datetime.utcnow())
-            #fields = [("CT BOT", "1.0.1", True),
+            #fields = [("CT BOT", "1.0.2", True),
             #          ("Made by:", "The unthinkable knowledge of a God.", True),
             #          ("For:", "Me to realise I am actually a God.", False)]
             #for name, value, inline in fields:
@@ -145,7 +145,30 @@ class Bot(BotBase):
 
     async def on_message(self, message):       
         if not message.author.bot:
-            await self.process_commands(message)
+            if isinstance(message.channel, DMChannel):
+                if len(message.content) < 50:
+                    await message.channel.send("Your message should be at least 50 characters in length.")
+
+                else:
+                    member = self.guild.get_member(message.author.id)
+                    embed = Embed(title="ModMail",
+                                  colour=member.colour,
+                                  timestamp=datetime.utcnow())
+                    
+                    embed.set_thumbnail(url=member.avatar_url)
+
+                    fields = [("Member", member.display_name, False),
+                              ("Message", message.content, False)]
+
+                    for name, value, inline in fields:
+                        embed.add_field(name=name, value=value, inline=inline)
+                    
+                    mod = self.get_cog("Mod")
+                    await mod.logs_channel.send(embed=embed)
+                    await message.channel.send("Message relayed to Moderators.")
+
+            else:
+                await self.process_commands(message)
 
 
 bot = Bot()
