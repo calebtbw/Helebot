@@ -51,6 +51,7 @@ class Test(Cog):
     async def say_glab(self, ctx):
         await ctx.send(f"| Gitlab: https://gitlab.com/calebtaybw | Where Python Begins")
         
+        
     @Cog.listener()
     async def on_ready(self):
         if not self.bot.ready:

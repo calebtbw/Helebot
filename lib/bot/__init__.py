@@ -11,7 +11,7 @@ from discord.ext.commands import Bot as BotBase
 from discord.ext.commands import Context
 from discord.ext.commands import (CommandNotFound, BadArgument, MissingRequiredArgument)
 
-from lib.db import db 
+from lib.db import db
 
 
 PREFIX = "+"
