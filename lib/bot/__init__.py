@@ -10,14 +10,19 @@ from discord.errors import HTTPException, Forbidden
 from discord.ext.commands import Bot as BotBase
 from discord.ext.commands import Context
 from discord.ext.commands import (CommandNotFound, BadArgument, MissingRequiredArgument)
+from discord.ext.commands import when_mentioned_or, command, has_permissions
 
 from lib.db import db
 
 
-PREFIX = "+"
 OWNER_IDS = [757239097583730709]
 COGS = [path.split("\\")[-1][:-3] for path in glob("./lib/cogs/*.py")]
 IGNORE_EXCEPTIONS = (CommandNotFound, BadArgument)
+
+
+def get_prefix(bot, message):
+    prefix = db.field("SELECT Prefix FROM guilds WHERE GuildID = ?", message.guild.id)
+    return when_mentioned_or(prefix)(bot, message)
 
 class Ready(object):
     def __init__(self):
@@ -33,15 +38,15 @@ class Ready(object):
 
 class Bot(BotBase):
     def __init__(self):
-        self.PREFIX = PREFIX
         self.ready = False
         self.cogs_ready = Ready()
+
         self.guild = None
         self.scheduler = AsyncIOScheduler()
 
         db.autosave(self.scheduler)
         super().__init__(
-            command_prefix=PREFIX, 
+            command_prefix=get_prefix, 
             owner_ids=OWNER_IDS,
             intents=Intents.all(),
         )
@@ -52,6 +57,24 @@ class Bot(BotBase):
             print(f" {cog} cog loaded!")
 
         print("Setup Complete!")
+
+    def update_db(self):      
+        db.multiexec("INSERT OR IGNORE INTO guilds (GuildID) VALUES (?)", 
+                    ((guild.id,) for guild in self.guilds))
+
+        db.multiexec("INSERT OR IGNORE INTO exp (UserID) VALUES (?)",
+                     ((member.id,) for member in self.guild.members if not member.bot))
+
+        to_remove = []
+        stored_members = db.column("SELECT UserID FROM exp")
+        for id_ in stored_members:
+            if not self.guild.get_member(id_):
+                to_remove.append(id_)
+
+        db.multiexec("DELETE FROM exp WHERE UserID = ?",
+                     ((id_,) for id_ in to_remove))                 
+
+        db.commit()
 
     def run(self, version):
         self.VERSION = version
@@ -115,21 +138,22 @@ class Bot(BotBase):
             self.stdout = self.get_channel(808620454122225674)
             self.scheduler.start()
 
+            self.update_db()
 
-            #embed = Embed(title="Now Online!", description="CT Bot is running like a God.", 
-            #              colour=0xFF0000, timestamp=datetime.utcnow())
-            #fields = [("CT BOT", "1.0.2", True),
-            #          ("Made by:", "The unthinkable knowledge of a God.", True),
-            #          ("For:", "Me to realise I am actually a God.", False)]
-            #for name, value, inline in fields:
-            #    embed.add_field(name=name, value=value, inline=inline)
-            #embed.set_author(name="Caleb T.", icon_url=self.guild.icon_url)
-            #embed.set_footer(text="Made with Python")    
-            #embed.set_thumbnail(url=self.guild.icon_url)
-            #embed.set_image(url=self.guild.icon_url)
-            #await channel.send(embed=embed)
+            embed = Embed(title="Now Online!", description="Stable Release", 
+                          colour=0xFF0000, timestamp=datetime.utcnow())
+            fields = [("CT BOT", "1.0.0", True),
+                      ("Made by:", "Caleb T.", True),
+                      ("For:", "JR Discord Bot Developer Pitch", False)]
+            for name, value, inline in fields:
+                embed.add_field(name=name, value=value, inline=inline)
+            embed.set_author(name="Caleb T.", icon_url=self.guild.icon_url)
+            embed.set_footer(text="Made with Python")    
+            embed.set_thumbnail(url=self.guild.icon_url)
+    
+            await self.stdout.send(embed=embed)
 
-            #await channel.send(file=File("./data/images/logo.png"))
+            await self.stdout.send(file=File("./data/images/logo.png"))
 
 
             while not self.cogs_ready.all_ready():
