@@ -142,12 +142,12 @@ class Bot(BotBase):
 
             embed = Embed(title="Now Online!", description="Stable Release", 
                           colour=0xFF0000, timestamp=datetime.utcnow())
-            fields = [("CT BOT", "1.0.0", True),
+            fields = [("HELEBOT", "1.0.0", True),
                       ("Made by:", "Caleb T.", True),
                       ("For:", "JR Discord Bot Developer Pitch", False)]
             for name, value, inline in fields:
                 embed.add_field(name=name, value=value, inline=inline)
-            embed.set_author(name="Caleb T.", icon_url=self.guild.icon_url)
+            embed.set_author(name="HELEBOT", icon_url=self.guild.me.avatar_url)
             embed.set_footer(text="Made with Python")    
             embed.set_thumbnail(url=self.guild.icon_url)
     
